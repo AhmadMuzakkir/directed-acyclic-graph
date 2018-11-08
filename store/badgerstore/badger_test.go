@@ -12,10 +12,11 @@ import (
 
 const (
 	testBadgerDir = "/tmp/badger_test"
+	testSize      = 100000
 )
 
 func TestDAG(t *testing.T) {
-	size := 100000
+	size := testSize
 	edges := size - 1
 
 	ds, teardown, err := getBadgerDataStore(size)
@@ -41,7 +42,7 @@ func TestDAG(t *testing.T) {
 }
 
 func BenchmarkReach(t *testing.B) {
-	size := 100000
+	size := testSize
 
 	graph, teardown, err := getGraph(size)
 	defer teardown()
@@ -58,7 +59,7 @@ func BenchmarkReach(t *testing.B) {
 }
 
 func BenchmarkConditionalReach(t *testing.B) {
-	size := 100000
+	size := testSize
 
 	graph, teardown, err := getGraph(size)
 	defer teardown()
@@ -75,7 +76,7 @@ func BenchmarkConditionalReach(t *testing.B) {
 }
 
 func BenchmarkList(t *testing.B) {
-	size := 100000
+	size := testSize
 
 	graph, teardown, err := getGraph(size)
 	defer teardown()
@@ -92,7 +93,7 @@ func BenchmarkList(t *testing.B) {
 }
 
 func BenchmarkConditionalList(t *testing.B) {
-	size := 100000
+	size := testSize
 
 	graph, teardown, err := getGraph(size)
 	defer teardown()
