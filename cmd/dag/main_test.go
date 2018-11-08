@@ -13,14 +13,14 @@ func getGraph(t *testing.B) (*store.DAG, func()) {
 		t.Fatal(err)
 	}
 
-	// If you want regenerate the data for every run, uncomment below.
-	// Otherwise, it will use existing data.
+	// Uncomment below, if you want regenerate the data for every run.
+	// Otherwise, it will use the existing data.
+	// Warning, this will be a lot slower.
 
-	graph := store.GenerateGraph(100000)
-	err = ds.Insert(graph)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = ds.Insert(store.GenerateGraph(100000))
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 
 	g, err := ds.Get()
 	if err != nil {

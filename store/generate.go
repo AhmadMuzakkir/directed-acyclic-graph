@@ -7,9 +7,6 @@ import (
 
 // Generate a DAG. It will have size vertices and size - 1 edges
 func GenerateGraph(size int) *DAG {
-	t := StartTimer("GenerateGraph")
-	defer t()
-
 	rand.Seed(time.Now().UnixNano())
 
 	graph := NewDAG()
