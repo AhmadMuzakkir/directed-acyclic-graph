@@ -5,6 +5,10 @@ Store the graph into Badger or BoltDB
 
 ## Getting Started
 
+### Implementation
+
+Refer to [model](https://github.com/AhmadMuzakkir/directed-acyclic-graph/blob/master/model) package for the DAG implementation and generation.
+
 ### Config
 
 Refer to [cmd/config.go](https://github.com/AhmadMuzakkir/directed-acyclic-graph/blob/master/cmd/config.go) 
@@ -18,7 +22,7 @@ Use [cmd/generate/main.go](https://github.com/AhmadMuzakkir/directed-acyclic-gra
 
 ### Benchmarks
 
-Refer to [cmd/store/dag_test.go](https://github.com/AhmadMuzakkir/directed-acyclic-graph/blob/master/store/dag_test.go) for the graph benchmarks.
+Refer to [model/dag_test.go](https://github.com/AhmadMuzakkir/directed-acyclic-graph/blob/master/model/dag_test.go) for the graph benchmarks.
 
 ### Sample Benchmarks
 
