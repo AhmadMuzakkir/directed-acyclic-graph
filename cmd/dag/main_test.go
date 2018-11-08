@@ -43,7 +43,7 @@ func getVertex(graph *model.DAG, t *testing.B) *model.Vertex {
 }
 
 func BenchmarkGet(t *testing.B) {
-	ds, teardown, err := cmd.GetBoltDataStore(cmd.BoltPath)
+	ds, teardown, err := cmd.GetDataStore()
 	if err != nil {
 		t.Fatal(err)
 	}
