@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"time"
+
+	"github.com/ahmadmuzakkir/dag/model"
 )
 
 func StartTimer(name string) func() {
@@ -15,7 +17,7 @@ func StartTimer(name string) func() {
 	}
 }
 
-func LogDAGAsJSON(graph *DAG) {
+func LogDAGAsJSON(graph *model.DAG) {
 	type vertex struct {
 		ID      string   `json:"id"`
 		Parents []string `json:"parents"`
@@ -23,7 +25,7 @@ func LogDAGAsJSON(graph *DAG) {
 		Rank    int      `json:"rank"`
 	}
 	var list []*vertex
-	for _, v := range graph.vertices {
+	for _, v := range graph.Vertices() {
 		var parents []string
 		for p, _ := range v.Parents {
 			parents = append(parents, p)

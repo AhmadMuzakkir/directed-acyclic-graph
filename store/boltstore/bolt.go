@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/ahmadmuzakkir/dag/model"
 	"github.com/ahmadmuzakkir/dag/store"
 	"github.com/boltdb/bolt"
 )
@@ -20,34 +21,38 @@ func NewBoltStore(db *bolt.DB) *BoltStore {
 	}
 }
 
-func (b *BoltStore) Get() (*store.DAG, error) {
+func (b *BoltStore) Get() (*model.DAG, error) {
 	raw, err := b.get()
 	if err != nil {
 		return nil, err
 	}
 
-	var m = make(map[string]*store.Vertex)
-	graph := store.NewDAG()
+	var m = make(map[string]*model.Vertex)
+	graph := model.NewDAG()
 	for _, v := range raw {
-		vertex := store.NewVertex(v.ID, v.Flag, v.Rank)
+		vertex := model.NewVertex(v.ID, v.Flag, v.Rank)
 		for _, parent := range v.Parents {
 			vertex.Parents[parent] = struct{}{}
+		}
+
+		for childrenID := range vertex.Children {
+			v.Children = append(v.Children, childrenID)
 		}
 
 		m[v.ID] = vertex
 		graph.AddVertex(vertex)
 	}
 
-	for _, v := range raw {
-		for _, c := range v.Parents {
-			graph.AddEdge(m[c], m[v.ID])
-		}
-	}
+	// for _, v := range raw {
+	// 	for _, c := range v.Parents {
+	// 		graph.AddEdge(m[c], m[v.ID])
+	// 	}
+	// }
 
 	return graph, nil
 }
 
-func (b *BoltStore) Insert(g *store.DAG) error {
+func (b *BoltStore) Insert(g *model.DAG) error {
 	// Convert each vertex into the internal representation of vertex.
 	vertices := g.Vertices()
 	var data []*boltVertex

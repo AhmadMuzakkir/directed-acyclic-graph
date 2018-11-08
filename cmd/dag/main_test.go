@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/ahmadmuzakkir/dag/cmd"
-	"github.com/ahmadmuzakkir/dag/store"
+	"github.com/ahmadmuzakkir/dag/model"
 )
 
-func getGraph(t *testing.B) (*store.DAG, func()) {
+func getGraph(t *testing.B) (*model.DAG, func()) {
 	ds, teardown, err := cmd.GetDataStore()
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func getGraph(t *testing.B) (*store.DAG, func()) {
 	return g, teardown
 }
 
-func getVertex(graph *store.DAG, t *testing.B) *store.Vertex {
+func getVertex(graph *model.DAG, t *testing.B) *model.Vertex {
 	var index int = 0
 	// index := rand.Intn(graph.CountVertex())
 

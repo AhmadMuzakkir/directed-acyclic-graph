@@ -1,4 +1,4 @@
-package store
+package model
 
 import "testing"
 
@@ -10,12 +10,12 @@ func TestGenerateDAG(t *testing.T) {
 
 	foundSize := graph.CountVertex()
 	if foundSize != size {
-		t.Fatalf("expected vertices count %d, fount %d", size, foundSize)
+		t.Fatalf("expected vertices count %d, found %d", size, foundSize)
 	}
 
 	foundEdges := graph.CountEdge()
 	if foundEdges != edges {
-		t.Fatalf("expected edges count %d, fount %d", edges, foundEdges)
+		t.Fatalf("expected edges count %d, found %d", edges, foundEdges)
 	}
 
 	// Check:

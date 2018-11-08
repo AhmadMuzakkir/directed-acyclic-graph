@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ahmadmuzakkir/dag/cmd"
-	"github.com/ahmadmuzakkir/dag/store"
+	"github.com/ahmadmuzakkir/dag/model"
 )
 
 func init() {
@@ -23,7 +23,7 @@ func main() {
 
 	defer teardown()
 
-	graph := store.GenerateGraph(100000)
+	graph := model.GenerateGraph(100000)
 
 	err = ds.Insert(graph)
 	if err != nil {

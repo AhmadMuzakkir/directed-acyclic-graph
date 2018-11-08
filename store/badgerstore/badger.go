@@ -3,6 +3,7 @@ package badgerstore
 import (
 	"encoding/json"
 
+	"github.com/ahmadmuzakkir/dag/model"
 	"github.com/ahmadmuzakkir/dag/store"
 	"github.com/dgraph-io/badger"
 )
@@ -19,36 +20,46 @@ func NewBadgerStore(db *badger.DB) *BadgerStore {
 	}
 }
 
-func (b *BadgerStore) Get() (*store.DAG, error) {
+func (b *BadgerStore) Get() (*model.DAG, error) {
 	raw, err := b.get()
 	if err != nil {
 		return nil, err
 	}
 
-	var m = make(map[string]*store.Vertex)
-	graph := store.NewDAG()
+	var m = make(map[string]*model.Vertex)
+	graph := model.NewDAG()
 	for _, v := range raw {
-		vertex := store.NewVertex(v.ID, v.Flag, v.Rank)
+		vertex := model.NewVertex(v.ID, v.Flag, v.Rank)
 		for _, parent := range v.Parents {
 			vertex.Parents[parent] = struct{}{}
+		}
+
+		for _, children := range v.Children {
+			vertex.Children[children] = struct{}{}
 		}
 
 		m[v.ID] = vertex
 		graph.AddVertex(vertex)
 	}
 
-	for _, v := range raw {
-		for _, c := range v.Parents {
-			graph.AddEdge(m[c], m[v.ID])
-		}
-	}
+	// for _, v := range raw {
+	// 	for _, c := range v.Parents {
+	// 		graph.AddEdge(m[c], m[v.ID])
+	// 	}
+	// }
 
 	return graph, nil
 }
 
-func (b *BadgerStore) Insert(g *store.DAG) error {
+func (b *BadgerStore) Insert(g *model.DAG) error {
+	// Clear the old data first.
+	if err := b.clear(); err != nil {
+		return err
+	}
+
 	// Convert each vertex into the internal representation of vertex.
 	vertices := g.Vertices()
+
 	var data []*badgerVertex
 
 	for _, vertex := range vertices {
@@ -66,11 +77,6 @@ func (b *BadgerStore) Insert(g *store.DAG) error {
 			v.Children = append(v.Children, childrenID)
 		}
 		data = append(data, v)
-	}
-
-	// Clear the old data first.
-	if err := b.clear(); err != nil {
-		return err
 	}
 
 	return b.insert(data)
@@ -117,9 +123,10 @@ func (b *BadgerStore) insert(list []*badgerVertex) error {
 		if err != nil {
 			return err
 		}
-		if err := txn.Set([]byte(list[i].ID), data); err != badger.ErrTxnTooBig {
-			return err
-		} else {
+		if err := txn.Set([]byte(list[i].ID), data); err != nil {
+			if err != badger.ErrTxnTooBig {
+				return err
+			}
 			if err := txn.Commit(nil); err != nil {
 				return err
 			}
@@ -159,9 +166,10 @@ func (b *BadgerStore) clear() error {
 	defer txn.Discard()
 
 	for i := range keys {
-		if err := txn.Delete(keys[i]); err != badger.ErrTxnTooBig {
-			return err
-		} else {
+		if err := txn.Delete(keys[i]); err != nil {
+			if err != badger.ErrTxnTooBig {
+				return err
+			}
 			if err := txn.Commit(nil); err != nil {
 				return err
 			}

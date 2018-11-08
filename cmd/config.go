@@ -19,7 +19,7 @@ const BoltPath = "/tmp/bolt/graph_bolt.db"
 const BadgerDirPath = "/tmp/badger"
 
 // 1 = Bolt, 2 = Badger
-const DBType = 1
+const DBType = 2
 
 func GetBoltDataStore(path string) (*boltstore.BoltStore, func(), error) {
 	// Create directory if it does not exist

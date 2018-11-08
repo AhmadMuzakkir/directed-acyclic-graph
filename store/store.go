@@ -1,6 +1,8 @@
 package store
 
+import "github.com/ahmadmuzakkir/dag/model"
+
 type DataStore interface {
-	Get() (*DAG, error)
-	Insert(g *DAG) error
+	Get() (*model.DAG, error)
+	Insert(g *model.DAG) error
 }

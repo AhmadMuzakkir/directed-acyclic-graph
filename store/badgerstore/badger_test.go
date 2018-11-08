@@ -1,17 +1,21 @@
 package badgerstore
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
-	"github.com/ahmadmuzakkir/dag/store"
+	"github.com/ahmadmuzakkir/dag/model"
 	"github.com/dgraph-io/badger"
 )
 
 const (
-	testBadgerDir = "/tmp/badger_test"
+	testBadgerDir = "/tmp/badger"
 )
 
 func getBadgerDataStore(size int, t *testing.T) (*BadgerStore, func()) {
+	rand.Seed(time.Now().UnixNano())
+
 	opts := badger.DefaultOptions
 	opts.Dir = testBadgerDir
 	opts.ValueDir = testBadgerDir
@@ -22,7 +26,7 @@ func getBadgerDataStore(size int, t *testing.T) (*BadgerStore, func()) {
 
 	var ds = NewBadgerStore(db)
 
-	graph := store.GenerateGraph(size)
+	graph := model.GenerateGraph(size)
 
 	err = ds.Insert(graph)
 	if err != nil {
@@ -46,11 +50,11 @@ func TestDAG(t *testing.T) {
 
 	foundSize := graph.CountVertex()
 	if foundSize != size {
-		t.Fatalf("expected vertices count %d, fount %d", size, foundSize)
+		t.Fatalf("expected vertices count %d, found %d", size, foundSize)
 	}
 
 	foundEdges := graph.CountEdge()
 	if foundEdges != edges {
-		t.Fatalf("expected edges count %d, fount %d", edges, foundEdges)
+		t.Fatalf("expected edges count %d, found %d", edges, foundEdges)
 	}
 }

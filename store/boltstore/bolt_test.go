@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ahmadmuzakkir/dag/store"
+	"github.com/ahmadmuzakkir/dag/model"
 	"github.com/boltdb/bolt"
 )
 
@@ -28,7 +28,7 @@ func getBoltDataStore(size int, t *testing.T) (*BoltStore, func()) {
 
 	var ds = NewBoltStore(db)
 
-	graph := store.GenerateGraph(size)
+	graph := model.GenerateGraph(size)
 
 	err = ds.Insert(graph)
 	if err != nil {
@@ -52,11 +52,11 @@ func TestDAG(t *testing.T) {
 
 	foundSize := graph.CountVertex()
 	if foundSize != size {
-		t.Fatalf("expected vertices count %d, fount %d", size, foundSize)
+		t.Fatalf("expected vertices count %d, found %d", size, foundSize)
 	}
 
 	foundEdges := graph.CountEdge()
 	if foundEdges != edges {
-		t.Fatalf("expected edges count %d, fount %d", edges, foundEdges)
+		t.Fatalf("expected edges count %d, found %d", edges, foundEdges)
 	}
 }
