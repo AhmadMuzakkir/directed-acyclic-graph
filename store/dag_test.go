@@ -17,6 +17,21 @@ func TestGenerateDAG(t *testing.T) {
 	if foundEdges != edges {
 		t.Fatalf("expected edges count %d, fount %d", edges, foundEdges)
 	}
+
+	// Check:
+	// - vertex with rank 0 must not have any parents
+	// - vertex with rank other than 0 must have at least one parent
+	for _, v := range graph.vertices {
+		if v.Rank == 0 {
+			if len(v.Parents) != 0 {
+				t.Fatal("vertex with rank 0 must not have any parents")
+			}
+			continue
+		}
+		if len(v.Parents) == 0 {
+			t.Fatal("vertex with rank other than 0 must have at least one parent")
+		}
+	}
 }
 
 func BenchmarkGenerateDAG(t *testing.B) {
