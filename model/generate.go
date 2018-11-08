@@ -42,8 +42,6 @@ func GenerateGraph(size int) *DAG {
 		// - Last rank should only have one vertex
 		// - Min vertices per rank is 10
 		// - Max vertices per rank is 30
-		rank++
-		rankVertexCount = 0
 		if rank == 0 || vertexCount == size || (rankVertexCount >= 10 && randBool()) || rankVertexCount > 30 {
 			rank++
 			rankVertexCount = 0
