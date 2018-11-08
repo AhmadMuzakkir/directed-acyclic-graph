@@ -52,11 +52,6 @@ func (b *BadgerStore) Get() (*model.DAG, error) {
 }
 
 func (b *BadgerStore) Insert(g *model.DAG) error {
-	// Clear the old data first.
-	if err := b.clear(); err != nil {
-		return err
-	}
-
 	// Convert each vertex into the internal representation of vertex.
 	vertices := g.Vertices()
 
@@ -77,6 +72,11 @@ func (b *BadgerStore) Insert(g *model.DAG) error {
 			v.Children = append(v.Children, childrenID)
 		}
 		data = append(data, v)
+	}
+
+	// Clear the old data first.
+	if err := b.clear(); err != nil {
+		return err
 	}
 
 	return b.insert(data)
@@ -153,7 +153,7 @@ func (b *BadgerStore) clear() error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		for it.Rewind(); it.Valid(); it.Next() {
-			keys = append(keys, it.Item().Key())
+			keys = append(keys, it.Item().KeyCopy(nil))
 		}
 
 		return nil
@@ -168,6 +168,9 @@ func (b *BadgerStore) clear() error {
 	for i := range keys {
 		if err := txn.Delete(keys[i]); err != nil {
 			if err != badger.ErrTxnTooBig {
+				if err := txn.Commit(nil); err != nil {
+					return err
+				}
 				return err
 			}
 			if err := txn.Commit(nil); err != nil {
