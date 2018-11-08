@@ -4,19 +4,10 @@ import (
 	"log"
 
 	"github.com/ahmadmuzakkir/dag/cmd"
-	"github.com/ahmadmuzakkir/dag/store"
 )
 
 func main() {
-	var ds store.DataStore
-	var teardown func()
-	var err error
-
-	if cmd.DBType == 1 {
-		ds, teardown, err = cmd.GetBoltDataStore(cmd.BoltPath)
-	} else {
-		ds, teardown, err = cmd.GetBadgerDataStore(cmd.BadgerDirPath)
-	}
+	ds, teardown, err := cmd.GetDataStore()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,8 +8,7 @@ import (
 )
 
 func getGraph(t *testing.B) (*store.DAG, func()) {
-	// ds, teardown, err := cmd.GetBadgerDataStore(cmd.BadgerDirPath)
-	ds, teardown, err := cmd.GetBoltDataStore(cmd.BoltPath)
+	ds, teardown, err := cmd.GetDataStore()
 	if err != nil {
 		t.Fatal(err)
 	}
