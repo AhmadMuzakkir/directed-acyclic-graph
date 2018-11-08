@@ -2,8 +2,12 @@ package model
 
 import "testing"
 
+const (
+	testSize = 100000
+)
+
 func TestGenerateDAG(t *testing.T) {
-	size := 100000
+	size := testSize
 	edges := size - 1
 
 	graph := GenerateGraph(size)
@@ -35,13 +39,13 @@ func TestGenerateDAG(t *testing.T) {
 }
 
 func BenchmarkGenerateDAG(t *testing.B) {
-	size := 100000
+	size := testSize
 
 	_ = GenerateGraph(size)
 }
 
 func BenchmarkReach(t *testing.B) {
-	size := 100000
+	size := testSize
 	graph := GenerateGraph(size)
 
 	v := getVertex(graph, t)
@@ -50,7 +54,7 @@ func BenchmarkReach(t *testing.B) {
 }
 
 func BenchmarkConditionalReach(t *testing.B) {
-	size := 100000
+	size := testSize
 	graph := GenerateGraph(size)
 
 	v := getVertex(graph, t)
@@ -59,7 +63,7 @@ func BenchmarkConditionalReach(t *testing.B) {
 }
 
 func BenchmarkList(t *testing.B) {
-	size := 100000
+	size := testSize
 	graph := GenerateGraph(size)
 
 	v := getVertex(graph, t)
@@ -68,7 +72,7 @@ func BenchmarkList(t *testing.B) {
 }
 
 func BenchmarkConditionalList(t *testing.B) {
-	size := 100000
+	size := testSize
 	graph := GenerateGraph(size)
 
 	v := getVertex(graph, t)
