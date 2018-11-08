@@ -20,7 +20,9 @@ Use [cmd/generate/main.go](https://github.com/AhmadMuzakkir/directed-acyclic-gra
 
 Refer to [cmd/store/dag_test.go](https://github.com/AhmadMuzakkir/directed-acyclic-graph/blob/master/store/dag_test.go) for the graph benchmarks.
 
-### Some Benchmarks
+### Sample Benchmarks
+
+Graph with 100,000 vertices and 99,999 edges.
 
 | Benchmark                   | Run           | Average    |
 | --------------------------- |-------------- |----------- |
