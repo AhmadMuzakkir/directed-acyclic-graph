@@ -2,6 +2,7 @@ package badgerstore
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"testing"
 	"time"
@@ -12,14 +13,29 @@ import (
 
 const (
 	testBadgerDir = "/tmp/badger_test"
-	testSize      = 100000
+	testGraphSize = 100000
 )
 
-func TestDAG(t *testing.T) {
-	size := testSize
-	edges := size - 1
+// Initiate the database and insert a new graph.
+func init() {
+	ds, teardown, err := getBadgerDataStore()
+	defer teardown()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	ds, teardown, err := getBadgerDataStore(size)
+	graph := model.GenerateGraph(testGraphSize)
+
+	err = ds.Insert(graph)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func TestDAG(t *testing.T) {
+	edges := testGraphSize - 1
+
+	ds, teardown, err := getBadgerDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
@@ -31,8 +47,8 @@ func TestDAG(t *testing.T) {
 	}
 
 	foundSize := graph.CountVertex()
-	if foundSize != size {
-		t.Fatalf("expected vertices count %d, found %d", size, foundSize)
+	if foundSize != testGraphSize {
+		t.Fatalf("expected vertices count %d, found %d", testGraphSize, foundSize)
 	}
 
 	foundEdges := graph.CountEdge()
@@ -42,74 +58,139 @@ func TestDAG(t *testing.T) {
 }
 
 func BenchmarkReach(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBadgerDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.Reach(v.ID)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.Reach(v.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkConditionalReach(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBadgerDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.ConditionalReach(v.ID, false)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.ConditionalReach(v.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkList(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBadgerDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.List(v.ID)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.List(v.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkConditionalList(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBadgerDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.ConditionalList(v.ID, false)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.ConditionalList(v.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
-func getBadgerDataStore(size int) (*BadgerStore, func(), error) {
+func BenchmarkAncestorBFS(t *testing.B) {
+	ds, teardown, err := getBadgerDataStore()
+	defer teardown()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		_, err := ds.AncestorsBFS(v.ID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkAncestorDFS(t *testing.B) {
+	ds, teardown, err := getBadgerDataStore()
+	defer teardown()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.AncestorsDFS(v.ID, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func getBadgerDataStore() (*BadgerStore, func(), error) {
 	rand.Seed(time.Now().UnixNano())
 
 	opts := badger.DefaultOptions
@@ -125,38 +206,5 @@ func getBadgerDataStore(size int) (*BadgerStore, func(), error) {
 
 	var ds = NewBadgerStore(db)
 
-	graph := model.GenerateGraph(size)
-
-	err = ds.Insert(graph)
-	if err != nil {
-		return nil, teardown, fmt.Errorf("failed to insert graph: %s", err)
-	}
-
 	return ds, teardown, nil
-}
-
-func getGraph(size int) (*model.DAG, func(), error) {
-	ds, teardown, err := getBadgerDataStore(size)
-	if err != nil {
-		return nil, teardown, err
-	}
-
-	g, err := ds.Get()
-	if err != nil {
-		return nil, teardown, err
-	}
-
-	return g, teardown, nil
-}
-
-func getVertex(graph *model.DAG) (*model.Vertex, error) {
-	var index int = 0
-	// index := rand.Intn(graph.CountVertex())
-
-	v, err := graph.GetVertexByIndex(index)
-	if err != nil {
-		return v, err
-	}
-
-	return v, nil
 }

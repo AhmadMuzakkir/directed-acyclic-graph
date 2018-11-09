@@ -55,7 +55,7 @@ func GetBadgerDataStore(dir string) (*badgerstore.BadgerStore, func(), error) {
 	return ds, func() { db.Close() }, nil
 }
 
-func GetDataStore() (store.DataStore, func(), error) {
+func GetDataStore() (store.GraphStore, func(), error) {
 	if DBType == 1 {
 		return GetBoltDataStore(BoltPath)
 	} else if DBType == 2 {

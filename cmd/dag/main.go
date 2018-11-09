@@ -21,7 +21,7 @@ func main() {
 
 	highestAncestorsCount := 0
 	for i := 0; i < 10; i++ {
-		v, _ := graph.GetVertexByIndex(i)
+		v, _ := graph.GetVertexByPosition(i)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -179,7 +179,7 @@ func (d *DAG) Insert(v *Vertex) {
 	d.AddVertex(v)
 }
 
-func (d *DAG) GetVertexByIndex(pos int) (*Vertex, error) {
+func (d *DAG) GetVertexByPosition(pos int) (*Vertex, error) {
 	i := 0
 	for _, v := range d.vertices {
 		if i == pos {

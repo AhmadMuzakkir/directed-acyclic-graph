@@ -8,7 +8,7 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-var _ store.DataStore = (*BadgerStore)(nil)
+var _ store.GraphStore = (*BadgerStore)(nil)
 
 type BadgerStore struct {
 	db *badger.DB
@@ -81,6 +81,157 @@ func (b *BadgerStore) Insert(g *model.DAG) error {
 
 	return b.insert(data)
 }
+func (b *BadgerStore) AncestorsBFS(id string, filter func(*model.Vertex) bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	err := b.db.View(func(txn *badger.Txn) error {
+		_, err := b.getByID(txn, id)
+		if err != nil {
+			return err
+		}
+
+		q := []string{id}
+		visited := make(map[string]struct{})
+		visited[id] = struct{}{}
+
+		for len(q) != 0 {
+			u := q[0]
+			q = q[1:len(q):len(q)]
+
+			v, err := b.getByID(txn, u)
+			if err != nil {
+				return err
+			}
+
+			for p, _ := range v.Parents {
+				if _, ok := visited[p]; !ok {
+					q = append(q, p)
+					visited[p] = struct{}{}
+
+					pv, err := b.getByID(txn, p)
+					if err != nil {
+						return err
+					}
+
+					if filter == nil || filter(pv) {
+						list = append(list, pv)
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	return list, err
+}
+
+func (b *BadgerStore) AncestorsDFS(id string, filter func(*model.Vertex) bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	err := b.db.View(func(txn *badger.Txn) error {
+		_, err := b.getByID(txn, id)
+		if err != nil {
+			return err
+		}
+
+		s := []string{id}
+		visited := make(map[string]struct{})
+
+		for len(s) != 0 {
+			u := s[len(s)-1]
+			s = s[: len(s)-1 : len(s)-1]
+
+			if _, ok := visited[u]; !ok {
+				visited[u] = struct{}{}
+
+				v, err := b.getByID(txn, u)
+				if err != nil {
+					return err
+				}
+
+				if filter == nil || filter(v) {
+					list = append(list, v)
+				}
+
+				for p, _ := range v.Parents {
+					if _, ok := visited[p]; !ok {
+						s = append(s, p)
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	return list, err
+}
+
+func (b *BadgerStore) Reach(id string) (int, error) {
+	list, err := b.AncestorsDFS(id, nil)
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
+}
+
+func (b *BadgerStore) ConditionalReach(id string, flag bool) (int, error) {
+	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
+		return v.Flag == flag
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
+}
+
+func (b *BadgerStore) List(id string) ([]*model.Vertex, error) {
+	list, err := b.AncestorsDFS(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (b *BadgerStore) ConditionalList(id string, flag bool) ([]*model.Vertex, error) {
+	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
+		return v.Flag == flag
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (b *BadgerStore) GetVertexByPosition(index int) (*model.Vertex, error) {
+	var vertex *model.Vertex
+
+	err := b.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 1000
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		i := 0
+		for it.Rewind(); it.Valid(); it.Next() {
+			if index == i {
+				item := it.Item()
+				data, err := item.Value()
+				if err != nil {
+					return err
+				}
+				if vertex, err = b.unmarshal(data); err != nil {
+					return err
+				}
+			}
+			i++
+		}
+		return nil
+	})
+
+	return vertex, err
+}
 
 func (b *BadgerStore) get() ([]*badgerVertex, error) {
 	var list []*badgerVertex
@@ -112,9 +263,6 @@ func (b *BadgerStore) get() ([]*badgerVertex, error) {
 
 // Insert the vertices into the database
 func (b *BadgerStore) insert(list []*badgerVertex) error {
-	t := store.StartTimer("[Badger] insert")
-	defer t()
-
 	txn := b.db.NewTransaction(true)
 	defer txn.Discard()
 
@@ -149,6 +297,7 @@ func (b *BadgerStore) insert(list []*badgerVertex) error {
 // Delete the existing data
 func (b *BadgerStore) clear() error {
 	var keys [][]byte
+	b.db.Size()
 	err := b.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
@@ -190,6 +339,38 @@ func (b *BadgerStore) clear() error {
 	}
 
 	return nil
+}
+
+func (b *BadgerStore) getByID(txn *badger.Txn, id string) (*model.Vertex, error) {
+	item, err := txn.Get([]byte(id))
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := item.Value()
+	if err != nil {
+		return nil, err
+	}
+
+	return b.unmarshal(data)
+}
+
+func (b *BadgerStore) unmarshal(data []byte) (*model.Vertex, error) {
+	var v badgerVertex
+	if err := json.Unmarshal(data, &v); err != nil {
+		return nil, err
+	}
+
+	vertex := model.NewVertex(v.ID, v.Flag, v.Rank)
+	for _, parent := range v.Parents {
+		vertex.Parents[parent] = struct{}{}
+	}
+
+	for childrenID := range vertex.Children {
+		v.Children = append(v.Children, childrenID)
+	}
+
+	return vertex, nil
 }
 
 type badgerVertex struct {

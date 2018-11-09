@@ -1,6 +1,9 @@
 package model
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+)
 
 const (
 	testSize = 100000
@@ -91,10 +94,10 @@ func BenchmarkConditionalList(t *testing.B) {
 }
 
 func getVertex(graph *DAG, t *testing.B) *Vertex {
-	var index int = 0
-	// index := rand.Intn(graph.CountVertex())
+	// var index int = 0
+	index := rand.Intn(graph.CountVertex())
 
-	v, err := graph.GetVertexByIndex(index)
+	v, err := graph.GetVertexByPosition(index)
 	if err != nil {
 		t.Fatal(err)
 	}

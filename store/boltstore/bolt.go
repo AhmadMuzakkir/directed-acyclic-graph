@@ -9,7 +9,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-var _ store.DataStore = (*BoltStore)(nil)
+var _ store.GraphStore = (*BoltStore)(nil)
 
 type BoltStore struct {
 	db *bolt.DB
@@ -77,6 +77,193 @@ func (b *BoltStore) Insert(g *model.DAG) error {
 	return b.insert(data)
 }
 
+func (b *BoltStore) GetVertexByPosition(position int) (*model.Vertex, error) {
+	var vertex *model.Vertex
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("graph"))
+		if bucket == nil {
+			return fmt.Errorf("bucket does not exist")
+		}
+
+		i := 0
+		c := bucket.Cursor()
+		var err error
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if i == position {
+				if vertex, err = b.unmarshal(v); err != nil {
+					return err
+				}
+			}
+			i++
+		}
+
+		return nil
+	})
+
+	return vertex, err
+}
+
+func (b *BoltStore) AncestorsBFS(id string, filter func(*model.Vertex) bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("graph"))
+		if bucket == nil {
+			return fmt.Errorf("bucket does not exist")
+		}
+
+		v := bucket.Get([]byte(id))
+		if v == nil {
+			return fmt.Errorf("vertex with id %s does not exist", id)
+		}
+
+		q := []string{id}
+		visited := make(map[string]struct{})
+		visited[id] = struct{}{}
+
+		for len(q) != 0 {
+			u := q[0]
+			q = q[1:len(q):len(q)]
+
+			v, err := b.getByID(bucket, u)
+			if err != nil {
+				return err
+			}
+
+			for p, _ := range v.Parents {
+				if _, ok := visited[p]; !ok {
+					q = append(q, p)
+					visited[p] = struct{}{}
+
+					pv, err := b.getByID(bucket, p)
+					if err != nil {
+						return err
+					}
+
+					if filter == nil || filter(pv) {
+						list = append(list, pv)
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+	return list, err
+}
+
+func (b *BoltStore) AncestorsDFS(id string, filter func(*model.Vertex) bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("graph"))
+		if bucket == nil {
+			return fmt.Errorf("bucket does not exist")
+		}
+
+		_, err := b.getByID(bucket, id)
+		if err != nil {
+			return err
+		}
+
+		s := []string{id}
+		visited := make(map[string]struct{})
+
+		for len(s) != 0 {
+			u := s[len(s)-1]
+			s = s[: len(s)-1 : len(s)-1]
+
+			if _, ok := visited[u]; !ok {
+				visited[u] = struct{}{}
+
+				v, err := b.getByID(bucket, u)
+				if err != nil {
+					return err
+				}
+
+				if filter == nil || filter(v) {
+					list = append(list, v)
+				}
+
+				for p, _ := range v.Parents {
+					if _, ok := visited[p]; !ok {
+						s = append(s, p)
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+	return list, err
+}
+
+func (b *BoltStore) Reach(id string) (int, error) {
+	list, err := b.AncestorsDFS(id, nil)
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
+}
+
+func (b *BoltStore) ConditionalReach(id string, flag bool) (int, error) {
+	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
+		return v.Flag == flag
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
+}
+
+func (b *BoltStore) List(id string) ([]*model.Vertex, error) {
+	list, err := b.AncestorsDFS(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (b *BoltStore) ConditionalList(id string, flag bool) ([]*model.Vertex, error) {
+	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
+		return v.Flag == flag
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (b *BoltStore) getByID(bucket *bolt.Bucket, id string) (*model.Vertex, error) {
+	data := bucket.Get([]byte(id))
+	if data == nil {
+		return nil, fmt.Errorf("vertex with id %s does not exist", id)
+	}
+
+	return b.unmarshal(data)
+}
+
+func (b *BoltStore) unmarshal(data []byte) (*model.Vertex, error) {
+	var v boltVertex
+	if err := json.Unmarshal(data, &v); err != nil {
+		return nil, fmt.Errorf("unmarshal error: %s", err)
+	}
+
+	vertex := model.NewVertex(v.ID, v.Flag, v.Rank)
+	for _, parent := range v.Parents {
+		vertex.Parents[parent] = struct{}{}
+	}
+
+	for childrenID := range vertex.Children {
+		v.Children = append(v.Children, childrenID)
+	}
+
+	return vertex, nil
+}
+
 func (b *BoltStore) get() ([]*boltVertex, error) {
 	var list []*boltVertex
 
@@ -103,9 +290,6 @@ func (b *BoltStore) get() ([]*boltVertex, error) {
 
 // Insert the vertices into the database
 func (b *BoltStore) insert(data []*boltVertex) error {
-	t := store.StartTimer("[Bolt] insert")
-	defer t()
-
 	// Clear the old data first.
 	err := b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("graph"))

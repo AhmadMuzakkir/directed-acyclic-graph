@@ -2,6 +2,8 @@ package boltstore
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,14 +14,30 @@ import (
 
 const (
 	testBoltPath = "/tmp/bolt/graph_test.db"
-	testSize     = 100000
+
+	testGraphSize = 100000
 )
 
-func TestDAG(t *testing.T) {
-	size := testSize
-	edges := size - 1
+// Initiate the database and insert a new graph.
+func init() {
+	ds, teardown, err := getBoltDataStore()
+	defer teardown()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	ds, teardown, err := getBoltDataStore(size)
+	graph := model.GenerateGraph(testGraphSize)
+
+	err = ds.Insert(graph)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func TestDAG(t *testing.T) {
+	edges := testGraphSize - 1
+
+	ds, teardown, err := getBoltDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
@@ -31,8 +49,8 @@ func TestDAG(t *testing.T) {
 	}
 
 	foundSize := graph.CountVertex()
-	if foundSize != size {
-		t.Fatalf("expected vertices count %d, found %d", size, foundSize)
+	if foundSize != testGraphSize {
+		t.Fatalf("expected vertices count %d, found %d", testGraphSize, foundSize)
 	}
 
 	foundEdges := graph.CountEdge()
@@ -42,74 +60,139 @@ func TestDAG(t *testing.T) {
 }
 
 func BenchmarkReach(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBoltDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.Reach(v.ID)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.Reach(v.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkConditionalReach(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBoltDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.ConditionalReach(v.ID, false)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.ConditionalReach(v.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkList(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBoltDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.List(v.ID)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.List(v.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func BenchmarkConditionalList(t *testing.B) {
-	size := testSize
-
-	graph, teardown, err := getGraph(size)
+	ds, teardown, err := getBoltDataStore()
 	defer teardown()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := getVertex(graph)
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graph.ConditionalList(v.ID, false)
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.ConditionalList(v.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
-func getBoltDataStore(size int) (*BoltStore, func(), error) {
+func BenchmarkAncestorBFS(t *testing.B) {
+	ds, teardown, err := getBoltDataStore()
+	defer teardown()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		_, err := ds.AncestorsBFS(v.ID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkAncestorDFS(t *testing.B) {
+	ds, teardown, err := getBoltDataStore()
+	defer teardown()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Choose a random vertex
+	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.ResetTimer()
+
+	for n := 0; n < t.N; n++ {
+		if _, err := ds.AncestorsDFS(v.ID, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func getBoltDataStore() (*BoltStore, func(), error) {
 	// Create directory if it does not exist
 	if _, err := os.Stat(testBoltPath); os.IsNotExist(err) {
 		if err2 := os.MkdirAll(filepath.Dir(testBoltPath), os.ModePerm); err2 != nil {
@@ -127,38 +210,5 @@ func getBoltDataStore(size int) (*BoltStore, func(), error) {
 
 	var ds = NewBoltStore(db)
 
-	graph := model.GenerateGraph(size)
-
-	err = ds.Insert(graph)
-	if err != nil {
-		return nil, teardown, fmt.Errorf("failed to insert graph: %s", err)
-	}
-
 	return ds, teardown, nil
-}
-
-func getGraph(size int) (*model.DAG, func(), error) {
-	ds, teardown, err := getBoltDataStore(size)
-	if err != nil {
-		return nil, teardown, err
-	}
-
-	g, err := ds.Get()
-	if err != nil {
-		return nil, teardown, err
-	}
-
-	return g, teardown, nil
-}
-
-func getVertex(graph *model.DAG) (*model.Vertex, error) {
-	var index int = 0
-	// index := rand.Intn(graph.CountVertex())
-
-	v, err := graph.GetVertexByIndex(index)
-	if err != nil {
-		return v, err
-	}
-
-	return v, nil
 }
