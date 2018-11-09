@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ahmadmuzakkir/dag/model"
+	"github.com/ahmadmuzakkir/dag/store"
 	"github.com/dgraph-io/badger"
 )
 
@@ -15,6 +16,12 @@ const (
 	testBadgerDir = "/tmp/badger_test"
 	testGraphSize = 100000
 )
+
+// Run the tests for both BFS and DFS
+var tesalgos = []testalgo{
+	testalgo{name: "BFS", algo: store.ALGO_BFS},
+	testalgo{name: "DFS", algo: store.ALGO_DFS},
+}
 
 // Initiate the database and insert a new graph.
 func init() {
@@ -72,10 +79,14 @@ func BenchmarkReach(t *testing.B) {
 
 	t.ResetTimer()
 
-	for n := 0; n < t.N; n++ {
-		if _, err := ds.Reach(v.ID); err != nil {
-			t.Fatal(err)
-		}
+	for _, algo := range tesalgos {
+		t.Run(algo.name, func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				if _, err := ds.Reach(algo.algo, v.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
@@ -94,10 +105,14 @@ func BenchmarkConditionalReach(t *testing.B) {
 
 	t.ResetTimer()
 
-	for n := 0; n < t.N; n++ {
-		if _, err := ds.ConditionalReach(v.ID, true); err != nil {
-			t.Fatal(err)
-		}
+	for _, algo := range tesalgos {
+		t.Run(algo.name, func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				if _, err := ds.ConditionalReach(algo.algo, v.ID, true); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
@@ -116,10 +131,14 @@ func BenchmarkList(t *testing.B) {
 
 	t.ResetTimer()
 
-	for n := 0; n < t.N; n++ {
-		if _, err := ds.List(v.ID); err != nil {
-			t.Fatal(err)
-		}
+	for _, algo := range tesalgos {
+		t.Run(algo.name, func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				if _, err := ds.List(algo.algo, v.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
@@ -145,51 +164,6 @@ func BenchmarkConditionalList(t *testing.B) {
 	}
 }
 
-func BenchmarkAncestorBFS(t *testing.B) {
-	ds, teardown, err := getBadgerDataStore()
-	defer teardown()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Choose a random vertex
-	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.ResetTimer()
-
-	for n := 0; n < t.N; n++ {
-		_, err := ds.AncestorsBFS(v.ID, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkAncestorDFS(t *testing.B) {
-	ds, teardown, err := getBadgerDataStore()
-	defer teardown()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Choose a random vertex
-	v, err := ds.GetVertexByPosition(rand.Intn(testGraphSize))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.ResetTimer()
-
-	for n := 0; n < t.N; n++ {
-		if _, err := ds.AncestorsDFS(v.ID, nil); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func getBadgerDataStore() (*BadgerStore, func(), error) {
 	rand.Seed(time.Now().UnixNano())
 
@@ -207,4 +181,9 @@ func getBadgerDataStore() (*BadgerStore, func(), error) {
 	var ds = NewBadgerStore(db)
 
 	return ds, teardown, nil
+}
+
+type testalgo struct {
+	name string
+	algo store.Algo
 }

@@ -11,11 +11,18 @@ type GraphStore interface {
 	// Insert will clear existing graph first, before inserting the new graph
 	Insert(g *model.DAG) error
 
-	Reach(id string) (int, error)
+	Reach(algo Algo, id string) (int, error)
 
-	ConditionalReach(id string, flag bool) (int, error)
+	ConditionalReach(algo Algo, id string, flag bool) (int, error)
 
-	List(id string) ([]*model.Vertex, error)
+	List(algo Algo, id string) ([]*model.Vertex, error)
 
-	ConditionalList(id string, flag bool) ([]*model.Vertex, error)
+	ConditionalList(algo Algo, id string, flag bool) ([]*model.Vertex, error)
 }
+
+type Algo int
+
+const (
+	ALGO_BFS Algo = iota
+	ALGO_DFS
+)

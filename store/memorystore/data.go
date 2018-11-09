@@ -24,19 +24,19 @@ func (d *DataMock) Insert(g *model.DAG) error {
 	return nil
 }
 
-func (d *DataMock) Reach(id string) (int, error) {
+func (d *DataMock) Reach(algo store.Algo, id string) (int, error) {
 	// NOT IMPLEMENTED
 	return 0, nil
 }
-func (d *DataMock) ConditionalReach(id string, flag bool) (int, error) {
+func (d *DataMock) ConditionalReach(algo store.Algo, id string, flag bool) (int, error) {
 	// NOT IMPLEMENTED
 	return 0, nil
 }
-func (d *DataMock) List(id string) ([]*model.Vertex, error) {
+func (d *DataMock) List(algo store.Algo, id string) ([]*model.Vertex, error) {
 	// NOT IMPLEMENTED
 	return nil, nil
 }
-func (d *DataMock) ConditionalList(id string, flag bool) ([]*model.Vertex, error) {
+func (d *DataMock) ConditionalList(algo store.Algo, id string, flag bool) ([]*model.Vertex, error) {
 	// NOT IMPLEMENTED
 	return nil, nil
 }

@@ -166,37 +166,72 @@ func (b *BadgerStore) AncestorsDFS(id string, filter func(*model.Vertex) bool) (
 	return list, err
 }
 
-func (b *BadgerStore) Reach(id string) (int, error) {
-	list, err := b.AncestorsDFS(id, nil)
+func (b *BadgerStore) Reach(algo store.Algo, id string) (int, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, nil)
+	} else {
+		list, err = b.AncestorsBFS(id, nil)
+	}
 	if err != nil {
 		return 0, err
 	}
+
 	return len(list), nil
 }
 
-func (b *BadgerStore) ConditionalReach(id string, flag bool) (int, error) {
-	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
-		return v.Flag == flag
-	})
+func (b *BadgerStore) ConditionalReach(algo store.Algo, id string, flag bool) (int, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	} else {
+		list, err = b.AncestorsBFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	}
 
 	if err != nil {
 		return 0, err
 	}
+
 	return len(list), nil
 }
 
-func (b *BadgerStore) List(id string) ([]*model.Vertex, error) {
-	list, err := b.AncestorsDFS(id, nil)
+func (b *BadgerStore) List(algo store.Algo, id string) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, nil)
+	} else {
+		list, err = b.AncestorsBFS(id, nil)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	return list, nil
 }
 
-func (b *BadgerStore) ConditionalList(id string, flag bool) ([]*model.Vertex, error) {
-	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
-		return v.Flag == flag
-	})
+func (b *BadgerStore) ConditionalList(algo store.Algo, id string, flag bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	} else {
+		list, err = b.AncestorsBFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	}
 
 	if err != nil {
 		return nil, err

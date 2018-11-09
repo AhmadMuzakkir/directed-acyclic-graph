@@ -199,41 +199,79 @@ func (b *BoltStore) AncestorsDFS(id string, filter func(*model.Vertex) bool) ([]
 	return list, err
 }
 
-func (b *BoltStore) Reach(id string) (int, error) {
-	list, err := b.AncestorsDFS(id, nil)
+func (b *BoltStore) Reach(algo store.Algo, id string) (int, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, nil)
+	} else {
+		list, err = b.AncestorsBFS(id, nil)
+	}
+
 	if err != nil {
 		return 0, err
 	}
+
 	return len(list), nil
 }
 
-func (b *BoltStore) ConditionalReach(id string, flag bool) (int, error) {
-	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
-		return v.Flag == flag
-	})
+func (b *BoltStore) ConditionalReach(algo store.Algo, id string, flag bool) (int, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	} else {
+		list, err = b.AncestorsBFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	}
 
 	if err != nil {
 		return 0, err
 	}
+
 	return len(list), nil
 }
 
-func (b *BoltStore) List(id string) ([]*model.Vertex, error) {
-	list, err := b.AncestorsDFS(id, nil)
+func (b *BoltStore) List(algo store.Algo, id string) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, nil)
+	} else {
+		list, err = b.AncestorsBFS(id, nil)
+	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	return list, nil
 }
 
-func (b *BoltStore) ConditionalList(id string, flag bool) ([]*model.Vertex, error) {
-	list, err := b.AncestorsDFS(id, func(v *model.Vertex) bool {
-		return v.Flag == flag
-	})
+func (b *BoltStore) ConditionalList(algo store.Algo, id string, flag bool) ([]*model.Vertex, error) {
+	var list []*model.Vertex
+	var err error
+
+	if algo == store.ALGO_DFS {
+		list, err = b.AncestorsDFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	} else {
+		list, err = b.AncestorsBFS(id, func(v *model.Vertex) bool {
+			return v.Flag == flag
+		})
+	}
 
 	if err != nil {
 		return nil, err
 	}
+
 	return list, nil
 }
 
