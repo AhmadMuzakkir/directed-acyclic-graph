@@ -28,10 +28,10 @@ Refer to [model/dag_test.go](https://github.com/AhmadMuzakkir/directed-acyclic-g
 
 Graph with 100,000 vertices and 99,999 edges.
 
-| Benchmark                   | Run           | Average    |
-| --------------------------- |-------------- |----------- |
-| BenchmarkGenerateDAG-4      | 2000000000    | 0.17 ns/op |
-| BenchmarkReach-4            | 2000000000    | 0.16 ns/op |
-| BenchmarkConditionalReach-4 | 2000000000    | 0.16 ns/op |
-| BenchmarkList-4             | 2000000000    | 0.18 ns/op |
-| BenchmarkConditionalList-4  | 2000000000    | 0.16 ns/op |
+| Benchmark                   | Run           | Average         |
+| --------------------------- |-------------- |---------------- |
+| BenchmarkGenerateDAG-4      | 2000000000    | 393103640 ns/op |
+| BenchmarkReach-4            | 2000000000    | 4222 ns/op      |
+| BenchmarkConditionalReach-4 | 2000000000    | 2355 ns/op      |
+| BenchmarkList-4             | 2000000000    | 5306 ns/op      |
+| BenchmarkConditionalList-4  | 2000000000    | 3728 ns/op      |

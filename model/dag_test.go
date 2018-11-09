@@ -41,7 +41,9 @@ func TestGenerateDAG(t *testing.T) {
 func BenchmarkGenerateDAG(t *testing.B) {
 	size := testSize
 
-	_ = GenerateGraph(size)
+	for n := 0; n < t.N; n++ {
+		_ = GenerateGraph(size)
+	}
 }
 
 func BenchmarkReach(t *testing.B) {
@@ -50,7 +52,9 @@ func BenchmarkReach(t *testing.B) {
 
 	v := getVertex(graph, t)
 
-	graph.Reach(v.ID)
+	for n := 0; n < t.N; n++ {
+		graph.Reach(v.ID)
+	}
 }
 
 func BenchmarkConditionalReach(t *testing.B) {
@@ -59,7 +63,9 @@ func BenchmarkConditionalReach(t *testing.B) {
 
 	v := getVertex(graph, t)
 
-	graph.ConditionalReach(v.ID, false)
+	for n := 0; n < t.N; n++ {
+		graph.ConditionalReach(v.ID, false)
+	}
 }
 
 func BenchmarkList(t *testing.B) {
@@ -68,7 +74,9 @@ func BenchmarkList(t *testing.B) {
 
 	v := getVertex(graph, t)
 
-	graph.List(v.ID)
+	for n := 0; n < t.N; n++ {
+		graph.List(v.ID)
+	}
 }
 
 func BenchmarkConditionalList(t *testing.B) {
@@ -77,7 +85,9 @@ func BenchmarkConditionalList(t *testing.B) {
 
 	v := getVertex(graph, t)
 
-	graph.ConditionalList(v.ID, false)
+	for n := 0; n < t.N; n++ {
+		graph.ConditionalList(v.ID, false)
+	}
 }
 
 func getVertex(graph *DAG, t *testing.B) *Vertex {
