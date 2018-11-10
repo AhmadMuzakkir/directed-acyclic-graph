@@ -157,10 +157,14 @@ func BenchmarkConditionalList(t *testing.B) {
 
 	t.ResetTimer()
 
-	for n := 0; n < t.N; n++ {
-		if _, err := ds.ConditionalList(v.ID, true); err != nil {
-			t.Fatal(err)
-		}
+	for _, algo := range tesalgos {
+		t.Run(algo.name, func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				if _, err := ds.ConditionalList(algo.algo, v.ID, true); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
