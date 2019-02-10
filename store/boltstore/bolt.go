@@ -62,6 +62,7 @@ func (b *BoltStore) Insert(g *model.DAG) error {
 			ID:   vertex.ID,
 			Flag: vertex.Flag,
 			Rank: vertex.Rank,
+			Index: vertex.Index,
 		}
 
 		for parentID := range vertex.Parents {
@@ -369,4 +370,5 @@ type boltVertex struct {
 	Children []string `json:"children"`
 	Flag     bool     `json:"flag"`
 	Rank     int      `json:"rank"`
+	Index    int      `json:"index"`
 }

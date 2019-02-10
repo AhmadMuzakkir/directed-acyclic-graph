@@ -30,6 +30,7 @@ func GenerateGraph(size int) *DAG {
 
 		// Create the vertex
 		v := NewVertex(id, randBool(), rank)
+		v.Index = vertexCount
 		graph.vertices[v.ID] = v
 
 		rankVertices[rank] = append(rankVertices[rank], v)

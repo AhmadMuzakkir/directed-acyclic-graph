@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"io"
 )
 
 // DAG type implements a Directed Acyclic Graph data structure.
@@ -189,4 +190,16 @@ func (d *DAG) GetVertexByPosition(pos int) (*Vertex, error) {
 	}
 
 	return nil, fmt.Errorf("vertex at position %v does not exist", pos)
+}
+
+func (d *DAG) DOT(w io.Writer) error {
+	var err error
+
+	_, err = fmt.Fprintln(w, "digraph DAG {")
+	for _, v := range d.vertices {
+		err = v.DOT(w, d)
+	}
+	_, err = fmt.Fprintln(w, "}")
+
+	return err
 }
